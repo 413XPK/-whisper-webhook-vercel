@@ -5,9 +5,7 @@ import { tmpdir } from 'os';
 import FormData from 'form-data';
 
 export const config = {
-  api: {
-    bodyParser: false,
-  },
+  api: { bodyParser: false }
 };
 
 export default async function handler(req, res) {
@@ -15,44 +13,60 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Only POST allowed' });
   }
 
-  const buffers = [];
-  for await (const chunk of req) {
-    buffers.push(chunk);
-  }
-  const body = Buffer.concat(buffers).toString();
-  const { url } = JSON.parse(body);
+  try {
+    const buffers = [];
+    for await (const chunk of req) {
+      buffers.push(chunk);
+    }
+    const body = Buffer.concat(buffers).toString();
+    const { url } = JSON.parse(body);
 
-  if (!url) return res.status(400).json({ error: 'Missing URL' });
+    if (!url) {
+      console.error('❌ No URL provided');
+      return res.status(400).json({ error: 'Missing URL' });
+    }
 
-  const tmpFile = path.join(tmpdir(), `video-${Date.now()}.webm`);
-  const response = await fetch(url);
-  const dest = fs.createWriteStream(tmpFile);
+    console.log('📥 Downloading from URL:', url);
+    const tmpFile = path.join(tmpdir(), `video-${Date.now()}.webm`);
+    const response = await fetch(url);
 
-  await new Promise((resolve, reject) => {
-    response.body.pipe(dest);
-    response.body.on('error', reject);
-    dest.on('finish', resolve);
-  });
+    if (!response.ok) {
+      console.error('❌ Failed to download video:', await response.text());
+      return res.status(400).json({ error: 'Failed to download video' });
+    }
 
-  const formData = new FormData();
-  formData.append('file', fs.createReadStream(tmpFile));
-  formData.append('model', 'whisper-1');
+    const dest = fs.createWriteStream(tmpFile);
+    await new Promise((resolve, reject) => {
+      response.body.pipe(dest);
+      response.body.on('error', reject);
+      dest.on('finish', resolve);
+    });
 
-  const whisper = await fetch(
-    'https://api.openai.com/v1/audio/transcriptions',
-    {
+    const formData = new FormData();
+    formData.append('file', fs.createReadStream(tmpFile));
+    formData.append('model', 'whisper-1');
+
+    console.log('📤 Uploading to Whisper API...');
+    const whisper = await fetch('https://api.openai.com/v1/audio/transcriptions', {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
       },
-      body: formData,
+      body: formData
+    });
+
+    const result = await whisper.json();
+    fs.unlinkSync(tmpFile);
+
+    if (!whisper.ok) {
+      console.error('❌ Whisper Error:', result);
+      return res.status(500).json({ error: result });
     }
-  );
 
-  const result = await whisper.json();
-  fs.unlinkSync(tmpFile);
-
-  if (!whisper.ok) return res.status(500).json({ error: result });
-
-  res.status(200).json(result);
+    console.log('✅ Whisper Response:', result);
+    res.status(200).json(result);
+  } catch (err) {
+    console.error('🔥 Server Error:', err);
+    res.status(500).json({ error: err.message });
+  }
 }
