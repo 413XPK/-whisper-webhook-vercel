@@ -1,5 +1,5 @@
 {
-"name": "-whisper-webhook-vercel",
+"name": "whisper-webhook-vercel",
 "version": "1.0.0",
 "type": "module",
 "scripts": {
