@@ -69,4 +69,5 @@ export default async function handler(req, res) {
     console.error('🔥 Server Error:', err);
     res.status(500).json({ error: err.message });
   }
+  
 }
