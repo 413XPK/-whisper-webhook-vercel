@@ -5,7 +5,7 @@ import { tmpdir } from 'os';
 import FormData from 'form-data';
 
 export const config = {
-  api: { bodyParser: false }
+  api: { bodyParser: false },
 };
 
 export default async function handler(req, res) {
@@ -47,13 +47,16 @@ export default async function handler(req, res) {
     formData.append('model', 'whisper-1');
 
     console.log('📤 Uploading to Whisper API...');
-    const whisper = await fetch('https://api.openai.com/v1/audio/transcriptions', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
-      },
-      body: formData
-    });
+    const whisper = await fetch(
+      'https://api.openai.com/v1/audio/transcriptions',
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        },
+        body: formData,
+      }
+    );
 
     const result = await whisper.json();
     fs.unlinkSync(tmpFile);
@@ -63,11 +66,10 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: result });
     }
 
-    console.log('✅ Whisper Response:', result);
+    console.log('✅ Yay Whisper Response:', result);
     res.status(200).json(result);
   } catch (err) {
     console.error('🔥 Server Error:', err);
     res.status(500).json({ error: err.message });
   }
-  
 }
