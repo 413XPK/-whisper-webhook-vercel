@@ -66,7 +66,7 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: result });
     }
 
-    console.log('✅ Yay Whisper Response:', result);
+    console.log('✅ Whisper Response:', result);
     res.status(200).json(result);
   } catch (err) {
     console.error('🔥 Server Error:', err);
