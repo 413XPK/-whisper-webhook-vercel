@@ -1,12 +1,9 @@
 {
-"name": "whisper-webhook-vercel",
-"version": "1.0.0",
-"type": "module",
-"scripts": {
-"start": "node api/transcribe.js"
-},
-"dependencies": {
-"form-data": "^4.0.0",
-"node-fetch": "^3.3.1"
-}
+  "name": "whisper-webhook-vercel",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "form-data": "^4.0.0",
+    "node-fetch": "^3.3.1"
+  }
 }
